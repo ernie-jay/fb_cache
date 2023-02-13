@@ -22,7 +22,8 @@ namespace FBCacheTests
             
             var success = cache1.SetData<int, string>(1, "one");
 
-            Assert.True(success);
+            Assert.True(success.Item1);
+            Assert.Null(success.Item2);
         }
 
         [Fact]
@@ -49,8 +50,9 @@ namespace FBCacheTests
             cache1.Dispose();
 
             cache1.SetData(1, "one");
-            cache1.RemoveData<int, string>(1);
+            var result = cache1.RemoveData<int, string>(1);
 
+            Assert.True(result);
             Assert.Throws<KeyNotFoundException>(() => cache1.GetData<int, string>(1));
         }
 
@@ -108,9 +110,11 @@ namespace FBCacheTests
                 cache1.SetData(i, i);
             }
             cache1.Capacity = 5;
-            int result = cache1.GetData<int, int>(6);
-            Assert.Equal(6, result);
-            Assert.Throws<KeyNotFoundException>(() => cache1.GetData<int,int>(1));
+            int result = cache1.GetData<int, int>(5);
+            Assert.Equal(5, result);
+
+            //the old elements are expected to be removed
+            Assert.Throws<KeyNotFoundException>(() => cache1.GetData<int,int>(4));
         }
 
         [Fact]
@@ -122,15 +126,44 @@ namespace FBCacheTests
 
             for(int i=1; i<=5; i++)
             {
-                cache1.SetData(i, i);
+                var result1 = cache1.SetData(i, i);
+
+                //Not expected to remove anything from cache
+                Assert.Null(result1.Item2);
             }
 
-            cache1.SetData(6, "Six");
+            var result = cache1.SetData(6, "Six");
 
+            //expected to remove the first item from the list
+            Assert.Equal(1, result.Item2);
+
+            //The first item should be not in the list
             Assert.Throws<KeyNotFoundException>(()=>cache1.GetData<int, int>(1));
             Assert.Equal(2, cache1.GetData<int, int>(2));
             Assert.Equal("Six", cache1.GetData<int, string>(6));
         }
 
+        [Fact]
+        public void TestLRE()
+        {
+            var cache1 = FbCache.Instance;
+            cache1.Capacity = 5;
+            cache1.Dispose();
+
+            for (int i = 1; i <= 5; i++)
+            {
+                cache1.SetData(i, i);
+            }
+
+            //put the element 1 on the top of the cache
+            var result = cache1.GetData<int, int>(1);
+
+            cache1.SetData(6, "six");
+
+            //Expected to remove the element 2 from the list
+            Assert.Throws<KeyNotFoundException>(() => cache1.GetData<int, int>(2));
+            Assert.Equal(1, cache1.GetData<int, int>(1));
+            Assert.Equal("six", cache1.GetData<int, string>(6));
+        }
     }
 }

@@ -82,7 +82,7 @@
                 }
             }
         }
-        public bool SetData<K, V>(K key, V data) 
+        public (bool,object?) SetData<K, V>(K key, V data) 
         {
             if (key == null) throw new ArgumentNullException("key");
             if (data == null) throw new ArgumentNullException("data");
@@ -99,10 +99,8 @@
                         cacheList.Remove(cacheSet[key]);
                         cacheSet.Remove(key);
                         count--;
-                    }
-
-                    //if the cache is at capacity, remove the last item
-                    if (count == capacity)
+                    }              
+                    else if (count == capacity) //if the cache is at capacity, remove the last item
                     {
                         var lastNode = cacheList.Last;
                         itemRemoved = lastNode.Value.Item1;
@@ -121,9 +119,8 @@
                     cacheSet = backupSet;
                     throw;
                 }
+                return (true, itemRemoved);
             }
-
-            return true;
         }
         public bool RemoveData<K, V>(K key) 
         {
