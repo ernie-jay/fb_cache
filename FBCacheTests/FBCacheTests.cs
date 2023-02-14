@@ -101,15 +101,14 @@ namespace FBCacheTests
         [Fact]
         public void TestResizeCache()
         {
-            var cache1 = FbCache.Instance;
+            var cache1 = FbCache.Instance.SetCapacity(10);
             cache1.Dispose();
 
-            cache1.Capacity = 10;
             for(int i=0; i<10; i++)
             {
                 cache1.SetData(i, i);
             }
-            cache1.Capacity = 5;
+            cache1.SetCapacity(5);
             int result = cache1.GetData<int, int>(5);
             Assert.Equal(5, result);
 
@@ -120,8 +119,7 @@ namespace FBCacheTests
         [Fact]
         public void TestCapacity()
         {
-            var cache1 = FbCache.Instance;
-            cache1.Capacity = 5;
+            var cache1 = FbCache.Instance.SetCapacity(5);
             cache1.Dispose();
 
             for(int i=1; i<=5; i++)
@@ -146,8 +144,7 @@ namespace FBCacheTests
         [Fact]
         public void TestLRE()
         {
-            var cache1 = FbCache.Instance;
-            cache1.Capacity = 5;
+            var cache1 = FbCache.Instance.SetCapacity(5);
             cache1.Dispose();
 
             for (int i = 1; i <= 5; i++)
@@ -164,6 +161,20 @@ namespace FBCacheTests
             Assert.Throws<KeyNotFoundException>(() => cache1.GetData<int, int>(2));
             Assert.Equal(1, cache1.GetData<int, int>(1));
             Assert.Equal("six", cache1.GetData<int, string>(6));
+        }
+
+        [Fact]
+        public void TestEdgeCases()
+        {
+            var cache = FbCache.Instance.SetCapacity(1);
+            cache.Dispose();
+
+            cache.SetData(1, "one");
+            cache.SetData(2, "two");
+
+            Assert.Equal("two", cache.GetData<int, string>(2));
+            Assert.Throws<KeyNotFoundException>(()=>cache.GetData<int, string>(1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => cache.SetCapacity(0));
         }
     }
 }
