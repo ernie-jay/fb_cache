@@ -193,5 +193,16 @@ namespace FBCacheTests
             cache.SetData(0, "zero");
             cache.GetData<int, int>(1999999);
         }
+
+        [Fact]
+        public void TestCastError()
+        {
+            var cache1 = FbCache.Instance.SetCapacity(5);
+            cache1.Dispose();
+
+            cache1.SetData(5, "five");
+            Assert.Throws<InvalidCastException>(() => cache1.GetData<int, int>(5));
+            Assert.Equal("five", cache1.GetData<int, string>(5));
+        }
     }
 }
