@@ -8,6 +8,8 @@
 
         //using LinkedList to update operations
         private LinkedList<(object, object)> cacheList;
+
+        //using Dictionary for get operations
         private Dictionary<object, LinkedListNode<(object, object)>> cacheSet;
         public int Capacity { get; private set; } = 1000;
 
@@ -21,6 +23,7 @@
             count = 0;
         }
 
+        //Singleton pattern
         public static FbCache Instance
         {
             get
@@ -76,7 +79,7 @@
         /// <param name="data">The data item to store in cache</param>
         /// <returns>(bool, object) touple: Item1:</returns>
         /// <exception cref="ArgumentNullException">key or data is null</exception>
-        public (bool,object?) SetData<K, V>(K key, V data) 
+        public object? SetData<K, V>(K key, V data) 
         {
             if (key == null) throw new ArgumentNullException("key");
             if (data == null) throw new ArgumentNullException("data");
@@ -113,9 +116,17 @@
                     cacheSet = backupSet;
                     throw;
                 }
-                return (true, itemRemoved);
+                return itemRemoved;
             }
         }
+
+        /// <summary>
+        /// Remove a specific element from the cache
+        /// </summary>
+        /// <typeparam name="K">Type of the key</typeparam>
+        /// <typeparam name="V">Type of the data</typeparam>
+        /// <param name="key">Unique key of the data</param>
+        /// <returns>True if data removed</returns>
         public bool RemoveData<K, V>(K key) 
         {
             if (key == null) return false;
@@ -138,6 +149,11 @@
                 }
             }
         }
+        
+        /// <summary>
+        /// Clean up the cache and reinitialise the internal storage
+        /// </summary>
+        /// <returns>True if success</returns>
         public bool Dispose() 
         {
             lock (this)
@@ -160,6 +176,13 @@
             }
         }
 
+        /// <summary>
+        /// Resize the cache
+        /// </summary>
+        /// <param name="newCapacity">The new capacity of the cache (must be greater than 0)</param>
+        /// <returns>Return the cache singleton object</returns>
+        /// <exception cref="ArgumentOutOfRangeException"></exception>
+        /// <remarks>If the cache contains more elements than the new capacity, the oldes elements will be removed</remarks>
         public FbCache SetCapacity(int newCapacity)
         {
             if (newCapacity < 1) throw new ArgumentOutOfRangeException("newCapacity", "Cache capacity should be higher than 0");
