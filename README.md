@@ -11,9 +11,9 @@ The Dictionary stores the key and the LinkedList node element for fast access (O
 
 API description:
 
-GetData<K, V>(K key): Getting the element with K key
-SetData<K, V>(K key, V data): Adding a new element, or replace the old one with a K key
-RemoveData<K, V>(K key): Remove the element with a K key
-Dispose(): Reset the cache
-SetCapacity(int newCapacity): Reinitialise the capacity of the cache
+- ***GetData<K, V>(K key)***: Getting the element with K key
+- ***SetData<K, V>(K key, V data)***: Adding a new element, or replace the old one with a K key
+- ***RemoveData<K, V>(K key)***: Remove the element with a K key
+- ***Dispose()***: Reset the cache
+- ***SetCapacity(int newCapacity)***: Reinitialise the capacity of the cache
 
