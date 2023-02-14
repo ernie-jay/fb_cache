@@ -177,5 +177,21 @@ namespace FBCacheTests
             Assert.Throws<KeyNotFoundException>(()=>cache.GetData<int, string>(1));
             Assert.Throws<ArgumentOutOfRangeException>(() => cache.SetCapacity(0));
         }
+
+        [Fact]
+        public void TestPerformance()
+        {
+            var cache = FbCache.Instance.SetCapacity(2000000);
+            cache.Dispose();
+
+            _ = Parallel.For(0, 2000000, i =>
+            {
+                cache.SetData(i, i);
+            });
+
+            cache.GetData<int, int>(1);
+            cache.SetData(0, "zero");
+            cache.GetData<int, int>(1999999);
+        }
     }
 }

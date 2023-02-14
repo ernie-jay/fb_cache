@@ -53,7 +53,6 @@
             if (key == null) throw new ArgumentNullException("key");
             lock (this)
             {
-                var backupList = new LinkedList<(object, object)>(cacheList);
                 //if no element in the cache, then throw exception
                 if (!cacheSet.ContainsKey(key)) throw new KeyNotFoundException();
                 try
@@ -64,7 +63,6 @@
                     return (V)node.Value.Item2;
                 }catch
                 {
-                    cacheList = backupList;
                     throw;
                 }
             }
@@ -85,8 +83,6 @@
             if (data == null) throw new ArgumentNullException("data");
             lock (this)
             {
-                var backupList = new LinkedList<(object, object)>(cacheList);
-                var backupSet = new Dictionary<object, LinkedListNode<(object, object)>>(cacheSet);
                 object itemRemoved = null;
                 try
                 {
@@ -112,8 +108,6 @@
 
                 }catch
                 {
-                    cacheList = backupList;
-                    cacheSet = backupSet;
                     throw;
                 }
                 return itemRemoved;
@@ -133,8 +127,6 @@
             if (!cacheSet.ContainsKey(key)) return false;
             lock(this)
             {
-                var backupList = new LinkedList<(object, object)>(cacheList);
-                var backupSet = new Dictionary<object, LinkedListNode<(object, object)>>(cacheSet);
                 try
                 {
                     cacheList.Remove(cacheSet[key]);
@@ -143,8 +135,6 @@
                     return true;
                 }
                 catch {
-                    cacheList = backupList;
-                    cacheSet = backupSet;
                     throw; 
                 }
             }
@@ -158,8 +148,6 @@
         {
             lock (this)
             {
-                var backupList = new LinkedList<(object, object)>(cacheList);
-                var backupSet = new Dictionary<object, LinkedListNode<(object, object)>>(cacheSet);
                 try
                 {
                     cacheList = new LinkedList<(object, object)>();
@@ -168,8 +156,6 @@
                     count = 0;
                 }catch
                 {
-                    cacheList = backupList;
-                    cacheSet = backupSet;
                     throw;
                 }
                 return true;
