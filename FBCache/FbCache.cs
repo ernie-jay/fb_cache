@@ -1,4 +1,6 @@
-﻿namespace FBCache
+﻿using System.Transactions;
+
+namespace FBCache
 {
     public class FbCache
     {
@@ -55,15 +57,21 @@
             {
                 //if no element in the cache, then throw exception
                 if (!cacheSet.ContainsKey(key)) throw new KeyNotFoundException();
-                try
+                using (var transactionScope = new TransactionScope())
                 {
-                    var node = cacheSet[key];
-                    cacheList.Remove(node);
-                    cacheList.AddFirst(node);
-                    return (V)node.Value.Item2;
-                }catch
-                {
-                    throw;
+                    try
+                    {
+                        var node = cacheSet[key];
+                        cacheList.Remove(node);
+                        cacheList.AddFirst(node);
+                        transactionScope.Complete();
+                        return (V)node.Value.Item2;
+                    }
+                    catch
+                    {
+                        transactionScope.Dispose();
+                        throw;
+                    }
                 }
             }
         }
@@ -84,31 +92,37 @@
             lock (this)
             {
                 object itemRemoved = null;
-                try
+                using (var transactionScope = new TransactionScope())
                 {
-                    //if there is a cache element with the same key, then remove it
-                    if (cacheSet.ContainsKey(key))
+                    try
                     {
-                        cacheList.Remove(cacheSet[key]);
-                        cacheSet.Remove(key);
-                        count--;
-                    }              
-                    else if (count == Capacity) //if the cache is at capacity, remove the last item
-                    {
-                        var lastNode = cacheList.Last;
-                        itemRemoved = lastNode.Value.Item1;
-                        cacheList.RemoveLast();
-                        cacheSet.Remove(lastNode.Value.Item1);
-                        count--;
+                        //if there is a cache element with the same key, then remove it
+                        if (cacheSet.ContainsKey(key))
+                        {
+                            cacheList.Remove(cacheSet[key]);
+                            cacheSet.Remove(key);
+                            count--;
+                        }
+                        else if (count == Capacity) //if the cache is at capacity, remove the last item
+                        {
+                            var lastNode = cacheList.Last;
+                            itemRemoved = lastNode.Value.Item1;
+                            cacheList.RemoveLast();
+                            cacheSet.Remove(lastNode.Value.Item1);
+                            count--;
+                        }
+
+                        var node = cacheList.AddFirst((key, data));
+                        cacheSet.Add(key, node);
+                        count++;
+                        transactionScope.Complete();
+
                     }
-
-                    var node = cacheList.AddFirst((key, data));
-                    cacheSet.Add(key, node);
-                    count++;
-
-                }catch
-                {
-                    throw;
+                    catch
+                    {
+                        transactionScope.Dispose();
+                        throw;
+                    }
                 }
                 return itemRemoved;
             }
@@ -127,15 +141,21 @@
             if (!cacheSet.ContainsKey(key)) return false;
             lock(this)
             {
-                try
+                using (var transactionScope = new TransactionScope())
                 {
-                    cacheList.Remove(cacheSet[key]);
-                    cacheSet.Remove(key);
-                    count--;
-                    return true;
-                }
-                catch {
-                    throw; 
+                    try
+                    {
+                        cacheList.Remove(cacheSet[key]);
+                        cacheSet.Remove(key);
+                        count--;
+                        transactionScope.Complete();
+                        return true;
+                    }
+                    catch
+                    {
+                        transactionScope.Dispose();
+                        throw;
+                    }
                 }
             }
         }
