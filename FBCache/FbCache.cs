@@ -92,6 +92,7 @@ namespace FBCache
             lock (this)
             {
                 object itemRemoved = null;
+                LinkedListNode<(object,object)> existingElement = null;
                 using (var transactionScope = new TransactionScope())
                 {
                     try
@@ -99,9 +100,9 @@ namespace FBCache
                         //if there is a cache element with the same key, then remove it
                         if (cacheSet.ContainsKey(key))
                         {
-                            cacheList.Remove(cacheSet[key]);
-                            cacheSet.Remove(key);
-                            count--;
+                            existingElement = cacheSet[key];
+                            cacheList.Remove(existingElement);
+                            //cacheList.AddFirst(existingElement);
                         }
                         else if (count == Capacity) //if the cache is at capacity, remove the last item
                         {
@@ -111,10 +112,15 @@ namespace FBCache
                             cacheSet.Remove(lastNode.Value.Item1);
                             count--;
                         }
+                        if (existingElement != null)
+                            cacheList.AddFirst(existingElement);
+                        else
+                        {
+                            var node = cacheList.AddFirst((key, data));
+                            cacheSet.Add(key, node);
+                            count++;
+                        }
 
-                        var node = cacheList.AddFirst((key, data));
-                        cacheSet.Add(key, node);
-                        count++;
                         transactionScope.Complete();
 
                     }
