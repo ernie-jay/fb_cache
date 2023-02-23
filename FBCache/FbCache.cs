@@ -191,28 +191,42 @@ namespace FBCache
         /// <remarks>If the cache contains more elements than the new capacity, the oldes elements will be removed</remarks>
         public FbCache SetCapacity(int newCapacity)
         {
-            if (newCapacity < 1) throw new ArgumentOutOfRangeException("newCapacity", "Cache capacity should be higher than 0");
-            if (count < newCapacity)
+            lock (this)
             {
-                cacheSet.EnsureCapacity(newCapacity);
-
-            }
-            else if (count > newCapacity)
-            {
-                var trimmedList = cacheList.Take(newCapacity).ToList();
-                LinkedList<(object, object)> newCacheList = new LinkedList<(object, object)>(trimmedList);
-                Dictionary<object, LinkedListNode<(object, object)>> newCacheSet = new Dictionary<object, LinkedListNode<(object, object)>>(newCapacity);
-                for (var node = newCacheList.First; node != null; node = node.Next)
+                if (newCapacity < 1) throw new ArgumentOutOfRangeException("newCapacity", "Cache capacity should be higher than 0");
+                if (count < newCapacity)
                 {
-                    newCacheSet.Add(node.Value.Item1, node);
-                }
-                cacheList = newCacheList;
-                cacheSet = newCacheSet;
-                count = newCapacity;
-            }
-            this.Capacity = newCapacity;
+                    cacheSet.EnsureCapacity(newCapacity);
 
-            return this;
+                }
+                else if (count > newCapacity)
+                {
+                    using (var transactionScope = new TransactionScope())
+                    {
+                        try
+                        {
+                            var trimmedList = cacheList.Take(newCapacity).ToList();
+                            LinkedList<(object, object)> newCacheList = new LinkedList<(object, object)>(trimmedList);
+                            Dictionary<object, LinkedListNode<(object, object)>> newCacheSet = new Dictionary<object, LinkedListNode<(object, object)>>(newCapacity);
+                            for (var node = newCacheList.First; node != null; node = node.Next)
+                            {
+                                newCacheSet.Add(node.Value.Item1, node);
+                            }
+                            cacheList = newCacheList;
+                            cacheSet = newCacheSet;
+                            count = newCapacity;
+                        }
+                        catch
+                        {
+                            transactionScope.Dispose();
+                            throw;
+                        }
+                    }
+                }
+                this.Capacity = newCapacity;
+
+                return this;
+            }
         }
     }
 }
